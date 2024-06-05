@@ -42,11 +42,6 @@ parameters: dict[str, tuple[Callable[[str], Any], str, str]] = {
         "",
         "The seed to use for sampling",
     ),
-    "response_format": (
-        decoder.decode,
-        "",
-        'The response format to use for the chat completion. Use { "type": "json_object" } to contstrain output to only valid json.',
-    ),
     "max_tokens": (
         int,
         "",
@@ -86,11 +81,6 @@ parameters: dict[str, tuple[Callable[[str], Any], str, str]] = {
         float,
         "0.1",
         "The mirostat sampling eta parameter.",
-    ),
-    "grammar": (
-        LlamaGrammar.from_string,
-        "",
-        "A grammar to use.",
     ),
     "logit_bias": (
         decoder.decode,

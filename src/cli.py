@@ -2,7 +2,10 @@ import os
 import sys
 import argparse
 import json
+
 from chat import Chat
+
+# from app import BASE_PATH
 
 is_pressed = None
 try:
