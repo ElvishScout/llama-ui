@@ -11,13 +11,13 @@ class Chat:
         self.llm = Llama(session.model)
 
     def question(self, text: str) -> Generator[str, None, None]:
-        context = self.session.character.context or []
-        history = self.session.history or []
+        context = self.session.character.context
+        history = self.session.history
 
         history.append(ChatMessage(role="user", content=text))
         messages = [msg.model_dump() for msg in context + history]
 
-        output = self.llm.create_chat_completion(messages, stream=True, **self.session.parameters)
+        output = self.llm.create_chat_completion(messages, stream=True, **self.session.parameters.to_kwargs())
         answer = ""
         for chunk in output:
             delta = chunk["choices"][0]["delta"]
@@ -27,4 +27,4 @@ class Chat:
                 content = delta["content"] or ""
                 answer += content
                 yield content
-        history.append(ChatMessage(role="ai", content=text))
+        history.append(ChatMessage(role="ai", content=answer))

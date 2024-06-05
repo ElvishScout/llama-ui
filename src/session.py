@@ -1,8 +1,12 @@
 import json
 import shlex
+from pathlib import Path
 from typing import *
 from pydantic import BaseModel
 from llama_cpp import LlamaGrammar
+
+
+builtin_stops = ["<|im_end|>"]
 
 
 class ChatMessage(BaseModel):
@@ -12,7 +16,7 @@ class ChatMessage(BaseModel):
 
 class Character(BaseModel):
     name: str
-    context: Optional[list[ChatMessage]]
+    context: list[ChatMessage]
     greeting: Optional[str]
 
 
@@ -40,15 +44,15 @@ class Parameters(BaseModel):
         for param, value in self.model_dump().items():
             match (param):
                 case "stop":
-                    kwargs[param] = shlex.split(value)
+                    kwargs[param] = builtin_stops + shlex.split(value)
                 case "seed":
                     if value != -1:
                         kwargs[param] = value
                 case "response_format":
-                    if value:
+                    if value != "":
                         kwargs[param] = json.loads(value)
                 case "grammar":
-                    if value:
+                    if value != "":
                         kwargs[param] = LlamaGrammar.from_string(value)
                 case _:
                     kwargs[param] = value
@@ -59,9 +63,10 @@ class Session(BaseModel):
     model: str
     user: str
     character: Character
-    history: Optional[list[ChatMessage]]
+    history: list[ChatMessage]
     parameters: Parameters
 
-    def load_file(filename):
-        with open(filename, "r", encoding="utf-8") as f:
-            return Session(**json.load(f))
+    @classmethod
+    def load_file(cls, file: str | Path) -> Self:
+        with open(file, "r", encoding="utf-8") as f:
+            return cls(**json.load(f))

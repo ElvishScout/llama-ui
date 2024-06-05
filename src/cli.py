@@ -2,10 +2,11 @@ import os
 import sys
 import argparse
 import json
+from pathlib import Path
 
 from env import *
+from session import *
 from chat import Chat
-from session import Session
 
 
 def input_multiline():
@@ -100,13 +101,21 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    session_name = args.session or None
-    model_path = args.model
-    names = args.names or default_names
-    prompt = args.prompt or None
+    session_path: Path
+    if args.session:
+        session_path = Path(args.session)
+    else:
+        session_path = ASSET_DIR / "template.json"
 
-    if (n := len(names)) < 2:
-        raise ValueError(f"2 names required, got {n}")
+    session = Session.load_file(session_path)
+
+    if args.model:
+        session.model = args.model
+    if args.names:
+        session.user = args.names[0]
+        session.character.name = args.names[1]
+    if args.prompt:
+        session.character.context.append(ChatMessage(role="system", content=args.prompt))
 
     with supress_stderr():
-        start_chat(model_path, names, prompt, session_name)
+        start_chat(session)
