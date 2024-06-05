@@ -1,8 +1,8 @@
 import json
 import shlex
 from typing import *
-from pydantic import *
-from llama_cpp import *
+from pydantic import BaseModel
+from llama_cpp import LlamaGrammar
 
 
 class ChatMessage(BaseModel):
@@ -11,9 +11,8 @@ class ChatMessage(BaseModel):
 
 
 class Character(BaseModel):
-    char_name: str
+    name: str
     context: Optional[list[ChatMessage]]
-    history: Optional[list[ChatMessage]]
     greeting: Optional[str]
 
 
@@ -58,13 +57,11 @@ class Parameters(BaseModel):
 
 class Session(BaseModel):
     model: str
-    user_name: str
+    user: str
     character: Character
+    history: Optional[list[ChatMessage]]
     parameters: Parameters
 
     def load_file(filename):
         with open(filename, "r", encoding="utf-8") as f:
             return Session(**json.load(f))
-
-
-print(Session.load_file("./default.json").parameters.to_kwargs())

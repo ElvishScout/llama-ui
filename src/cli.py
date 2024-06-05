@@ -3,33 +3,21 @@ import sys
 import argparse
 import json
 
+from env import *
 from chat import Chat
-
-# from app import BASE_PATH
-
-is_pressed = None
-try:
-    from keyboard import is_pressed
-
-    is_pressed("ctrl")
-except:
-    is_pressed = None
-
-SAVE_DIR = os.path.join(os.path.dirname(__file__), "saves")
+from session import Session
 
 
 def input_multiline():
     text = ""
     while True:
-        if is_pressed and is_pressed("ctrl"):
-            break
-        try:
-            line = input()
-        except EOFError:
-            break
-        if text:
+        line = input()
+        if line[-1] == "\\":
+            text += line[-1]
             text += "\n"
-        text += line
+        else:
+            text += line
+            break
     return text
 
 
@@ -47,41 +35,18 @@ class supress_stderr:
         self.devnull.close()
 
 
-default_prompt = """\
-This is a conversation between User and Llama, a friendly chatbot. Llama is \
-helpful, kind, honest, good at writing, and never fails to answer any requests \
-immediately and with precision.\
-"""
-
-default_names = ["User", "Assistant"]
-
-
-def start_chat(model_path: str, names: list[str], prompt: str | None, session: str | None):
-    messages = None
-    if session:
-        try:
-            with open(session, "r", encoding="utf-8") as f:
-                messages = json.decoder.JSONDecoder(strict=False).decode(f.read())
-        except FileNotFoundError:
-            pass
-
-    if prompt and messages:
-        raise ValueError("cannot apply prompt to an existing session")
-
-    chat = Chat(model_path)
-
-    if prompt:
-        chat.prompt(prompt)
-    if messages:
-        chat.load_messages(messages)
+def start_chat(session: Session):
+    user_name = session.user
+    ai_name = session.character.name
+    chat = Chat(session)
 
     while True:
-        print(f"=== {names[0]} ===")
+        print(f"=== {user_name} ===")
         try:
             text = input_multiline().strip()
         except KeyboardInterrupt:
             break
-        print(f"=== {names[1]} ===")
+        print(f"=== {ai_name} ===")
         for content in chat.question(text):
             print(content, end="")
         print()
