@@ -70,10 +70,8 @@ def start_chat(session: Session):
 
 def cli(args):
     session_path: str | Path
-    is_new = True
     if args.session:
         session_path = args.session
-        is_new = False
     else:
         session_path = ASSET_DIR / "template.json"
 
