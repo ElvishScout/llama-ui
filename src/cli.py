@@ -9,19 +9,6 @@ from session import *
 from chat import Chat
 
 
-def input_multiline():
-    text = ""
-    while True:
-        line = input()
-        if line[-1] == "\\":
-            text += line[-1]
-            text += "\n"
-        else:
-            text += line
-            break
-    return text
-
-
 class supress_stderr:
     def __init__(self):
         pass
@@ -36,10 +23,38 @@ class supress_stderr:
         self.devnull.close()
 
 
+def input_multiline():
+    text = ""
+    while True:
+        line = input()
+        if line[-1] == "\\":
+            text += line[-1]
+            text += "\n"
+        else:
+            text += line
+            break
+    return text
+
+
+def ask(message: str, default: bool) -> bool:
+    while True:
+        reply = input(f"{message} ({'Y/n' if default else 'y/N'}) ").strip().lower()
+        reply = reply or ("y" if default else "n")
+        if reply == "y":
+            return True
+        elif reply == "n":
+            return False
+
+
 def start_chat(session: Session):
     user_name = session.user
     ai_name = session.character.name
     chat = Chat(session)
+
+    greeting = chat.greet()
+    if greeting is not None:
+        print(f"=== {ai_name} ===")
+        print(greeting)
 
     while True:
         print(f"=== {user_name} ===")
@@ -52,19 +67,54 @@ def start_chat(session: Session):
             print(content, end="")
         print()
 
-    save = False
+
+def cli(args):
+    session_path: str | Path
+    is_new = True
+    if args.session:
+        session_path = args.session
+        is_new = False
+    else:
+        session_path = ASSET_DIR / "template.json"
+
+    with open(session_path, "r", encoding="utf-8") as f:
+        session = Session.model_validate_json(f.read(), strict=False)
+
+    if args.model:
+        session.model = args.model
+    if args.character:
+        character: Character
+        with open(args.character, "r", encoding="utf-8") as f:
+            character = Character.model_validate_json(f.read(), strict=False)
+        session.character = character
+    if args.names:
+        session.user = args.names[0]
+        session.character.name = args.names[1]
+    if args.prompt:
+        for message in session.character.context:
+            if message.role == "system":
+                message.content = args.prompt
+                break
+        else:
+            session.character.context.append(ChatMessage(role="system", content=args.prompt))
+
+    if session.model == "":
+        raise ValueError("no model specified")
+
+    with supress_stderr():
+        start_chat(session)
+
+    save: bool
     try:
-        reply = input("Save session? (Y/n) ").strip().lower() or "y"
-        if save := (reply == "y"):
-            if not session:
-                session = input("Enter session name: ")
+        save = ask("Save session?", True)
+        if save:
+            session_path = input(f"Enter session name: ").strip() or session_path
     except KeyboardInterrupt:
         save = False
-        print("Canceled.")
 
     if save:
-        with open(session, "w", encoding="utf-8") as f:
-            f.write(json.encoder.JSONEncoder(ensure_ascii=False, indent=2).encode(chat.messages))
+        with open(session_path, "w", encoding="utf-8") as f:
+            f.write(session.model_dump_json(indent=2))
 
 
 if __name__ == "__main__":
@@ -76,6 +126,12 @@ if __name__ == "__main__":
         dest="session",
         help="session path",
         nargs="?",
+    )
+    parser.add_argument(
+        "-g",
+        "--gui",
+        dest="gui",
+        help="launch graphic user interface",
     )
     parser.add_argument(
         "-m",
@@ -102,8 +158,10 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     session_path: Path
+    is_new = True
     if args.session:
         session_path = Path(args.session)
+        is_new = False
     else:
         session_path = ASSET_DIR / "template.json"
 
@@ -117,5 +175,7 @@ if __name__ == "__main__":
     if args.prompt:
         session.character.context.append(ChatMessage(role="system", content=args.prompt))
 
-    with supress_stderr():
-        start_chat(session)
+    if session.model == "":
+        raise ValueError("no model specified")
+
+    cli(session, is_new)

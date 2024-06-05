@@ -65,8 +65,3 @@ class Session(BaseModel):
     character: Character
     history: list[ChatMessage]
     parameters: Parameters
-
-    @classmethod
-    def load_file(cls, file: str | Path) -> Self:
-        with open(file, "r", encoding="utf-8") as f:
-            return cls(**json.load(f))

@@ -8,18 +8,12 @@ from tkinter.filedialog import *
 from chat import Chat
 from parameters import parameters
 
-from pathlib import Path
+from env import *
 
 # import chat
 # import cli
 # import gui
 # import parameters
-
-BASE_DIR = Path(__file__).parent
-ASSET_DIR = BASE_DIR / "assets"
-LOG_DIR = BASE_DIR / "logs"
-MODEL_DIR = BASE_DIR / "models"
-SESSION_DIR = BASE_DIR / "sessions"
 
 app_fonts = {
     "Default": ("微软雅黑", 9),
