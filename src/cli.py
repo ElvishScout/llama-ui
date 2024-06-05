@@ -38,7 +38,7 @@ def input_multiline():
 
 def ask(message: str, default: bool) -> bool:
     while True:
-        reply = input(f"{message} ({'Y/n' if default else 'y/N'}) ").strip().lower()
+        reply = input(message).strip().lower()
         reply = reply or ("y" if default else "n")
         if reply == "y":
             return True
@@ -104,7 +104,7 @@ def cli(args):
 
     save: bool
     try:
-        save = ask("Save session?", True)
+        save = ask("Save session? (Y/n)", True)
         if save:
             session_path = input(f"Enter session name: ").strip() or session_path
     except KeyboardInterrupt:
