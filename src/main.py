@@ -1,19 +1,12 @@
 import os
-import sys
 import argparse
-import json
-from pathlib import Path
 
-from env import *
-from session import *
-from chat import Chat
 from cli import cli
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         prog=os.path.basename(__file__),
-        description="Python command line interface for Llama chatbots.",
+        description="Python UI for Llama chatbots.",
     )
     parser.add_argument(
         dest="session",
