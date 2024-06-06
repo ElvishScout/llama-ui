@@ -4,7 +4,7 @@ import argparse
 import json
 from pathlib import Path
 
-from env import *
+from config import *
 from session import *
 from chat import Chat
 
@@ -36,14 +36,14 @@ def input_multiline():
     return text
 
 
-def ask(message: str, default: bool) -> bool:
-    while True:
-        reply = input(message).strip().lower()
-        reply = reply or ("y" if default else "n")
-        if reply == "y":
-            return True
-        elif reply == "n":
-            return False
+def ask(message: str, default: bool) -> bool | None:
+    reply = input(message).strip().lower()
+    reply = reply or ("y" if default else "n")
+    if reply == "y":
+        return True
+    elif reply == "n":
+        return False
+    return None
 
 
 def start_chat(session: Session):
@@ -68,45 +68,24 @@ def start_chat(session: Session):
         print()
 
 
-def cli(args):
-    session_path: str | Path
-    if args.session:
-        session_path = args.session
-    else:
-        session_path = ASSET_DIR / "template.json"
-
-    with open(session_path, "r", encoding="utf-8") as f:
-        session = Session.model_validate_json(f.read(), strict=False)
-
-    if args.model:
-        session.model = args.model
-    if args.character:
-        character: Character
-        with open(args.character, "r", encoding="utf-8") as f:
-            character = Character.model_validate_json(f.read(), strict=False)
-        session.character = character
-    if args.names:
-        session.user = args.names[0]
-        session.character.name = args.names[1]
-    if args.prompt:
-        for message in session.character.context:
-            if message.role == "system":
-                message.content = args.prompt
-                break
-        else:
-            session.character.context.append(ChatMessage(role="system", content=args.prompt))
-
+def cli(session: Session, session_path: str):
     if session.model == "":
         raise ValueError("no model specified")
 
     with supress_stderr():
         start_chat(session)
 
-    save: bool
+    save: bool | None
     try:
-        save = ask("Save session? (Y/n)", True)
+        while True:
+            save = ask("Save session? (Y/n)", True)
+            if save is not None:
+                break
         if save:
-            session_path = input(f"Enter session name: ").strip() or session_path
+            while True:
+                session_path = input(f"Enter session name: ").strip() or session_path
+                if session_path != "":
+                    break
     except KeyboardInterrupt:
         save = False
 

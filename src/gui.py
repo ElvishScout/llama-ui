@@ -8,7 +8,7 @@ from tkinter.filedialog import *
 from chat import Chat
 from parameters import parameters
 
-from env import *
+from config import *
 
 # import chat
 # import cli

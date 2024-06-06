@@ -1,6 +1,8 @@
 import os
 import argparse
 
+from config import *
+from session import *
 from cli import cli
 
 if __name__ == "__main__":
@@ -28,9 +30,9 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "-c",
-        "--character",
+        "--char",
         dest="character",
-        help="ai character file path",
+        help="character file path",
         required=False,
     )
     parser.add_argument(
@@ -50,4 +52,35 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    cli(args)
+    session: Session | None = None
+    session_path = ""
+    if args.session:
+        session_path = args.session
+        try:
+            with open(session_path, "r", encoding="utf-8") as f:
+                session = Session.model_validate_json(f.read(), strict=False)
+        except FileNotFoundError:
+            pass
+    if session is None:
+        with open(ASSET_DIR / "template.json", "r", encoding="utf-8") as f:
+            session = Session.model_validate_json(f.read(), strict=False)
+
+    if args.model:
+        session.model = args.model
+    if args.character:
+        character: Character
+        with open(args.character, "r", encoding="utf-8") as f:
+            character = Character.model_validate_json(f.read(), strict=False)
+        session.character = character
+    if args.names:
+        session.user = args.names[0]
+        session.character.name = args.names[1]
+    if args.prompt:
+        for message in session.character.context:
+            if message.role == "system":
+                message.content = args.prompt
+                break
+        else:
+            session.character.context.append(Message(role="system", content=args.prompt))
+
+    cli(session, session_path)
